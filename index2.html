@@ -1,0 +1,161 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+	  <title>Timeline basic demo</title>
+	  
+	  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.17.0/vis.min.css rel="stylesheet" type="text/css" />
+
+	   <style type="text/css">
+	   body {
+	   	margin: 0
+	   }
+	    #mynetwork {
+	      width: 100%;
+	      height: 100vh;
+	      border: 0px solid lightgray;
+	     background: #292929;
+	    }
+
+	  </style>
+	</head>
+	<body>
+		<div id="mynetwork"></div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.17.0/vis.min.js"></script>
+
+		<script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+		<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+		<script type="text/javascript">
+			var container = document.getElementById('mynetwork');
+		   	var options = {
+		   		layout: {
+		   			improvedLayout:true,
+		   			hierarchical: {
+		   				direction: 'LR',
+		   				sortMethod: 'directed',
+						enabled:true,
+						levelSeparation: 150,
+						nodeSpacing: 100,
+						treeSpacing: 200,
+						edgeMinimization: true,
+						blockShifting: true
+		   			},
+		   		},
+		   		edges: {
+		        	width: 1,
+                    arrows: {
+                        to: {enabled: true, scaleFactor:0.5, type:'arrow'}
+                    },
+		          	color: '#91CFC2',
+		          	smooth: {
+                        type: 'cubicBezier',
+                        forceDirection: 'horizontal',
+                        roundness: 0.4
+                    }
+		        },
+		        nodes: {
+		        	font: {
+							color:'lightgrey',
+							size: 18
+					},
+					scaling: {
+		          		customScalingFunction: function (min,max,total,value) {
+						  if(value <= 1.0 && value >= 0.0) {
+						  	return value;
+						  } else {
+						  	return 0.0;
+						  }
+
+						}
+		          	},
+		          	value: 0.0
+				},	
+				groups: {
+					inactive: {
+						shape: 'dot',
+						color: {
+							border: 'black',
+							background: 'blue'
+						},
+						font: {
+							color:'lightgray',
+							size: 18
+						}
+					},
+					active: {
+						shape: 'dot',
+						color: {
+							border: 'black',
+							background: 'green'
+						},
+						font: {
+							color:'lightgrey',
+							size: 18
+						}
+					}
+				}
+			};
+
+		 	var ros = new ROSLIB.Ros({
+		      url : 'ws://rosbridge:9090'
+		  	}).on('connection', function() {
+		    	console.log('Connected to websocket server.');
+		  	}).on('error', function(error) {
+		    	console.log('Error connecting to websocket server: ', error);
+		  	}).on('close', function() {
+		    	console.log('Connection to websocket server closed.');
+		  	});
+			var initial = {};
+			initial['nodes'] = [];
+			initial['edges'] = [];
+			
+			var data = {
+				nodes: new vis.DataSet(initial.nodes),
+				edges: new vis.DataSet(initial.edges)
+			};
+
+		  	var listener = new ROSLIB.Topic({
+				ros : ros,
+				name : '/workflow/pref_viz',
+				messageType : 'std_msgs/String'
+			});
+
+		  	var network = new vis.Network(container, data, options);
+		  	listener.subscribe(function(message) {
+		  		// console.log(message.data);
+				
+				var tmpdata = JSON.parse(message.data);
+				
+				if ('nodes' in tmpdata) {
+					data.nodes.map(function(elem) {
+						if(elem.value) {
+							elem.value = 0.0;
+							data.nodes.update(elem);
+						}
+					});
+					data.nodes.update(tmpdata.nodes);
+				}
+
+			  	if ('edges' in tmpdata) {
+			  		data.edges.update(tmpdata.edges);
+
+			  		data.nodes.map(function(elem) {
+				  		if (elem.group == 'active') {
+				  			animate(elem.id);
+				  		}
+				  	});
+			  	}
+			  	
+		  	});
+		  	var last_active_node = ''
+		  	var animate = function(active_node) {
+		  		if(active_node != last_active_node) {
+		  			console.log(active_node);
+		  			network.focus(active_node, {scale: 1.2, animation:{duration:500, easingFunction: 'easeOutQuad'}})
+		  			last_active_node = active_node;
+		  		}
+		  		
+		  	}
+		</script>
+	</body>
+</html>
