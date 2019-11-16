@@ -2,22 +2,22 @@
 layout: default
 ---
 
-<div class="home">
+{% include hero-section.html %}
 
-  <h1 class="page-heading">Posts</h1>
+{% include about-section.html %}
 
-  <ul class="post-list">
-    {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+{% include skills-section.html %}
 
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-        </h2>
-      </li>
-    {% endfor %}
-  </ul>
+{% include experience-section.html %}
 
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+{% include education-section.html %}
 
-</div>
+{% include services-section.html %}
+
+{% include portfolio-section.html %}
+
+{% include testimonial-section.html %}
+
+{% include client-section.html %}
+
+{% include blog-section.html %}
