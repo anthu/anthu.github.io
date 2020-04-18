@@ -1,2 +1,2 @@
 # anthu's github page
-http://anthu.github.io/
+<https://anthu.github.io/>
